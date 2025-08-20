@@ -1,0 +1,8 @@
+{
+      "type":"minecraft:stonecutting",
+      "ingredient":{
+        "tag":"minecraft:warped_stem"
+      },
+      "result":"minecraft:warped_slab"
+      ,"count":4
+    }
