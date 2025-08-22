@@ -24,7 +24,7 @@ public class StairsHelper {
         }
 
         blockToStairsCache = new HashMap<>();
-        // recipeManager = world.getRecipeManager();
+
         RecipeManager recipeManager = server.getRecipeManager();
         Collection<StonecuttingRecipe> stonecuttingRecipes = recipeManager
                 .listAllOfType(RecipeType.STONECUTTING);

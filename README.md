@@ -1,1 +1,1 @@
-lorem ipsum
+A simple Minecraft Mod that adds a tool to cut whole blocks into stairs, and rotate them.

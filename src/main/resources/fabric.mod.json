@@ -2,14 +2,14 @@
 	"schemaVersion": 1,
 	"id": "wood-cutter",
 	"version": "${version}",
-	"name": "Wood Cutter",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Stair Cutter",
+	"description": "This mods adds a simple tool that cuts whole blocks into their stairs form",
 	"authors": [
-		"Me!"
+		"grimoireCompiler"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"sources": "https://github.com/grimoireCompiler/wood-cutter-fabric-mod"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/wood-cutter/icon.png",

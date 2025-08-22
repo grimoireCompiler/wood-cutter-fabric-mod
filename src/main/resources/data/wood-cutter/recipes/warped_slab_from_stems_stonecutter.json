@@ -1,8 +1,8 @@
 {
       "type":"minecraft:stonecutting",
       "ingredient":{
-        "tag":"minecraft:crimson_stem"
+        "tag":"minecraft:warped_stems"
       },
-      "result":"minecraft:crimson_slab"
+      "result":"minecraft:warped_slab"
       ,"count":8
     }

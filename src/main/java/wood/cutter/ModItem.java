@@ -12,11 +12,6 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 
 public class ModItem {
-    public static final Item SUSPICIOUS_SUBSTANCE = register(
-            // Ignore the food component for now, we'll cover it later in the food section.
-            new Item(new FabricItemSettings().food(new FoodComponent.Builder().build())),
-            "suspicious_substance"
-    );
 
     public static final Item GRINDER = register( new Grinder(new FabricItemSettings()), "grinder");
 
@@ -34,8 +29,6 @@ public class ModItem {
     public static void initialize() {
         // Get the event for modifying entries in the ingredients group.
         // And register an event handler that adds our suspicious item to the ingredients group.
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS)
-                .register((itemGroup) -> itemGroup.add(ModItem.SUSPICIOUS_SUBSTANCE));
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
                 .register((itemGroup) -> itemGroup.add(ModItem.GRINDER));
     }

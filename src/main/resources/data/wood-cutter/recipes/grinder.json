@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "  #",
+    " c ",
+    "c  "
+  ],
+  "key": {
+    "#": {
+      "item": "minecraft:stonecutter"
+    },
+    "c": {
+      "item": "minecraft:copper_ingot"
+    }
+  },
+  "result": {
+    "item": "wood-cutter:grinder",
+    "count": 1
+  }
+}
