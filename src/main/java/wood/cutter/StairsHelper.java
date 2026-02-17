@@ -1,19 +1,19 @@
 package wood.cutter;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.StairsBlock;
-import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.RecipeManager;
-import net.minecraft.recipe.RecipeType;
-import net.minecraft.recipe.StonecuttingRecipe;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.World;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
+import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class StairsHelper {
     private static Map<Block, Block> blockToStairsCache = null;
@@ -24,26 +24,21 @@ public class StairsHelper {
         }
 
         blockToStairsCache = new HashMap<>();
+        List<StairBlock> stairs = BuiltInRegistries.BLOCK.stream()
+                .filter(StairBlock.class::isInstance)
+                .map(StairBlock.class::cast)
+                .toList();
 
-        RecipeManager recipeManager = server.getRecipeManager();
-        Collection<StonecuttingRecipe> stonecuttingRecipes = recipeManager
-                .listAllOfType(RecipeType.STONECUTTING);
-
-        for (StonecuttingRecipe recipe : stonecuttingRecipes) {
-            ItemStack result = recipe.getOutput(server.getRegistryManager());
-            Block resultBlock = Block.getBlockFromItem(result.getItem());
-
-            if (resultBlock instanceof StairsBlock) {
-                Ingredient ingredient = recipe.getIngredients().get(0);
-
-                for (ItemStack inputStack : ingredient.getMatchingStacks()) {
-                    Block inputBlock = Block.getBlockFromItem(inputStack.getItem());
-                    if (inputBlock != Blocks.AIR) {
-                        blockToStairsCache.compute(inputBlock, (k,old) ->
-                                (old == null || Registries.BLOCK.getId(resultBlock).toString().length() < Registries.BLOCK.getId(old).toString().length() ) ? resultBlock : old);
-                    }
-                }
+        try {
+            Field baseStateField = StairBlock.class.getDeclaredField("baseState");
+            baseStateField.setAccessible(true);
+            for (StairBlock stair : stairs){
+                Block baseBlock = ((BlockState) baseStateField.get(stair)).getBlock();
+                blockToStairsCache.compute(baseBlock, (k,old) ->
+                        (old == null || BuiltInRegistries.BLOCK.getKey(stair).toString().length() < BuiltInRegistries.BLOCK.getKey(old).toString().length() ) ? stair : old);
             }
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
 
         return blockToStairsCache;

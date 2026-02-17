@@ -1,26 +1,29 @@
 package wood.cutter;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.StairsBlock;
-import net.minecraft.block.enums.BlockHalf;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.*;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Grinder extends Item {
 
-    public Grinder(Settings settings) {
+    public Grinder(Properties settings) {
         super(settings);
     }
 
@@ -29,45 +32,45 @@ public class Grinder extends Item {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        World world = context.getWorld();
-        BlockPos pos = context.getBlockPos();
+    public InteractionResult useOn(UseOnContext context) {
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
         BlockState blockState = world.getBlockState(pos);
-        PlayerEntity player = context.getPlayer();
+        Player player = context.getPlayer();
         Block block = blockState.getBlock();
-
-        if(block instanceof StairsBlock blockStair){
-            if(player.isSneaking()) {
-                BlockHalf half = blockState.get(StairsBlock.HALF);
-                blockState = blockState.with(StairsBlock.HALF, half == BlockHalf.BOTTOM ? BlockHalf.TOP : BlockHalf.BOTTOM);
+        if(block instanceof StairBlock blockStair){
+            if(player.isShiftKeyDown()) {
+                Half half = blockState.getValue(StairBlock.HALF);
+                blockState = blockState.setValue(StairBlock.HALF, half == Half.BOTTOM ? Half.TOP : Half.BOTTOM);
             }else
-                blockState = blockStair.rotate(blockState, BlockRotation.CLOCKWISE_90);
+                blockState = blockState.rotate(Rotation.CLOCKWISE_90);
 
-            //Handle connecting stiars
-            Direction facing = blockState.get(StairsBlock.FACING);
-            BlockPos nPos = pos.add(facing.getVector());
-            blockState = blockState.getStateForNeighborUpdate(Direction.UP, world.getBlockState(nPos), world, pos, nPos);
+            //Handle connecting stairs
+            Direction facing = blockState.getValue(StairBlock.FACING);
+            BlockPos nPos = pos.offset(facing.getUnitVec3i());
 
-            world.setBlockState(pos, blockState);
-            world.updateNeighbors(pos, block);
+            //blockState = blockState.updateShape(world, null, pos, Direction.UP, nPos, world.getBlockState(nPos), world.random);
 
-            world.playSound(null, pos, SoundEvents.BLOCK_GRINDSTONE_USE, SoundCategory.BLOCKS, 1f, (float) (0.5 + 0.5*Math.random()));
-            return ActionResult.SUCCESS;
+            world.setBlockAndUpdate(pos, blockState);
+            world.updateNeighborsAt(pos, block);
+
+            world.playSound(null, pos, SoundEvents.GRINDSTONE_USE, SoundSource.BLOCKS, 1f, (float) (0.5 + 0.5*Math.random()));
+            return InteractionResult.SUCCESS;
         }else if (StairsHelper.hasStairsVariant(block)) {
-            if (!world.isClient) {
-                Direction facing = context.getHorizontalPlayerFacing();
+            if (!world.isClientSide()) {
+                Direction facing = context.getHorizontalDirection();
                 Block stair = StairsHelper.getStairsVariant(block);
-                BlockState stairState = stair.getDefaultState().with(StairsBlock.FACING, facing);
+                BlockState stairState = stair.defaultBlockState().setValue(StairBlock.FACING, facing);
 
                 //Project the hit through the block
-                Vec3d eye = player.getEyePos();
-                Vec3d hitPos = context.getHitPos();
-                Vec3d line = hitPos.subtract(eye);
+                Vec3 eye = player.getEyePosition();
+                Vec3 hitPos = context.getClickLocation();
+                Vec3 line = hitPos.subtract(eye);
                 Direction projection = facing.getOpposite();
-                Vec3d planeNormal = Vec3d.of(projection.getVector());
-                Vec3d planeCenter = pos.toCenterPos().subtract(planeNormal.multiply(0.5));
-                double d = planeCenter.subtract(eye).dotProduct(planeNormal)/(line.dotProduct(planeNormal));
-                Vec3d newHitPos = eye.add(line.multiply(d));
+                Vec3 planeNormal = Vec3.atLowerCornerOf(projection.getUnitVec3i());
+                Vec3 planeCenter = pos.getCenter().subtract(planeNormal.scale(0.5));
+                double d = planeCenter.subtract(eye).dot(planeNormal)/(line.dot(planeNormal));
+                Vec3 newHitPos = eye.add(line.scale(d));
 
                 // Create a new hit result as if hitting the block behind
                 BlockHitResult newHitResult = new BlockHitResult(
@@ -77,27 +80,27 @@ public class Grinder extends Item {
                         true
                 );
 
-                ItemPlacementContext placementContext = new ItemPlacementContext(
+                BlockPlaceContext placementContext = new BlockPlaceContext(
                         player,
                         context.getHand(),
                         new ItemStack(stair.asItem()),
                         newHitResult
                 );
 
-                world.breakBlock(pos, false);
-                if (stair instanceof StairsBlock stairsBlockCast) {
-                    stairState = stairsBlockCast.getPlacementState(placementContext);
+                world.destroyBlock(pos, false);
+                if (stair instanceof StairBlock stairsBlockCast) {
+                    stairState = stairsBlockCast.getStateForPlacement(placementContext);
                     if (stairState == null)
-                        stairState = stair.getDefaultState().with(StairsBlock.FACING, facing);
+                        stairState = stair.defaultBlockState().setValue(StairBlock.FACING, facing);
 
                 }
-                world.setBlockState(pos, stairState);
-                world.updateNeighbors(pos, block);
-                world.playSound(null, pos, SoundEvents.BLOCK_GRINDSTONE_USE, SoundCategory.BLOCKS, 1f, (float) (0.5 + 0.5*Math.random()));
+                world.setBlockAndUpdate(pos, stairState);
+                world.updateNeighborsAt(pos, block);
+                world.playSound(null, pos, SoundEvents.GRINDSTONE_USE, SoundSource.BLOCKS, 1f, (float) (0.5 + 0.5*Math.random()));
             }
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
 
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 }

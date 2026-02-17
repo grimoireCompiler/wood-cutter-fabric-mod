@@ -1,36 +1,36 @@
 package wood.cutter;
 
-import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.api.item.v1.FabricItem.Settings;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-import net.fabricmc.fabric.api.recipe.v1.ingredient.FabricIngredient;
-import net.minecraft.item.FoodComponent;
-import net.minecraft.item.FoodComponents;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+
+import java.util.function.Function;
 
 public class ModItem {
 
-    public static final Item GRINDER = register( new Grinder(new FabricItemSettings()), "grinder");
+    public static final Item GRINDER = register("grinder", Grinder::new, new Item.Properties());
 
-    public static Item register(Item item, String id) {
-        // Create the identifier for the item.
-        Identifier itemID = new Identifier(WoodCutter.MOD_ID, id);
+    public static <GenericItem extends Item> GenericItem register(String name, Function<Item.Properties, GenericItem> itemFactory, Item.Properties settings) {
+        ResourceKey<Item> itemKey = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(WoodCutter.MOD_ID, name));
 
-        // Register the item.
-        Item registeredItem = Registry.register(Registries.ITEM, itemID, item);
+        GenericItem item = itemFactory.apply(settings.setId(itemKey));
 
-        // Return the registered item!
-        return registeredItem;
+        Registry.register(BuiltInRegistries.ITEM, itemKey, item);
+
+        return item;
     }
 
     public static void initialize() {
         // Get the event for modifying entries in the ingredients group.
         // And register an event handler that adds our suspicious item to the ingredients group.
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.TOOLS)
-                .register((itemGroup) -> itemGroup.add(ModItem.GRINDER));
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES)
+                .register((itemGroup) -> itemGroup.accept(ModItem.GRINDER));
     }
 
 }

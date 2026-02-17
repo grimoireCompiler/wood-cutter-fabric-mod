@@ -5,8 +5,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
